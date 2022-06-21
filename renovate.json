@@ -1,0 +1,22 @@
+{
+  "extends": [
+    "config:base"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "automerge": true
+    }
+  ],
+  "regexManagers": [
+    {
+      "fileMatch": ["^action.yml$"],
+      "matchStrings": [
+        "default: (?<currentValue>.*?) # renovate"
+      ],
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "tailscale/tailscale"
+    }
+  ]
+}

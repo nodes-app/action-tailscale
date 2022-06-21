@@ -1,0 +1,35 @@
+name: Run Tailscale
+description: Runs Tailscale
+branding:
+  icon: activity
+  color: blue
+inputs:
+  auth-key:
+    description: Tailscale Auth Key
+    required: true
+  version:
+    description: Tailscale Version (defaults to latest)
+    required: false
+    default: 1.26.1 # renovate
+runs:
+  using: composite
+  steps:
+  
+    - name: Generate Hostname
+      id: generate-hostname
+      shell: bash
+      env: 
+        OWNER: ${{ github.event.repository.owner.login }}
+        REPO: ${{ github.event.repository.name }}
+        RUN_ID: ${{ github.run_id }}
+      run: |
+        suffix=$(sum=$(echo -n "$RUN_ID" | sha256sum) && echo ${sum::4})
+        hostname="gh-actions-$OWNER-$REPO-$suffix"
+        echo "::set-output name=hostname::$hostname"
+
+    - name: Run Tailscale
+      uses: tailscale/github-action@93adf6fb64ed736bdb5aa1f11c9b09f839a9a70c
+      with:
+        authkey: ${{ inputs.auth-key }}
+        version: ${{ inputs.version }}
+        args: --shields-up --accept-routes --hostname "${{ steps.generate-hostname.outputs.hostname }}"
