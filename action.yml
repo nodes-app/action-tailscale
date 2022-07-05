@@ -28,7 +28,7 @@ runs:
         echo "::set-output name=hostname::$hostname"
 
     - name: Run Tailscale
-      uses: tailscale/github-action@93adf6fb64ed736bdb5aa1f11c9b09f839a9a70c
+      uses: tailscale/github-action@5f7849625a3aa4d56c6febe7202891f6a29fb30f
       with:
         authkey: ${{ inputs.auth-key }}
         version: ${{ inputs.version }}
