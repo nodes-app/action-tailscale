@@ -10,7 +10,7 @@ inputs:
   version:
     description: Tailscale Version (defaults to latest)
     required: false
-    default: 1.26.1 # renovate
+    default: 1.28.0 # renovate
 runs:
   using: composite
   steps:
