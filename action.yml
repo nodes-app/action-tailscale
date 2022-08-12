@@ -67,10 +67,10 @@ runs:
     - name: Run
       shell: bash
       env:
-        ACCEPT_ROUTES: ${{ inputs.accept-routes }}
+        ACCEPT_ROUTES: ${{ inputs.accept-routes == 'true' }}
         AUTHKEY: ${{ inputs.authkey }}
         HOSTNAME: ${{ inputs.hostname }}
-        SHIELDS_UP: ${{ inputs.shields-up }}
+        SHIELDS_UP: ${{ inputs.shields-up == 'true' }}
         ADDITIONAL_ARGS: ${{ inputs.args }}
         OWNER: ${{ github.event.repository.owner.login }}
         REPO_NAME: ${{ github.event.repository.name }}
@@ -81,8 +81,8 @@ runs:
           HOSTNAME="gh-actions-$OWNER_NAME-$REPO-$(sum=$(echo -n "$RUN_ID" | sha256sum) && echo ${sum::4})"
         fi
         sudo tailscale up \
-          --accept-routes ${ACCEPT_ROUTES} \
-          --authkey ${AUTHKEY} \
-          --hostname ${HOSTNAME} \
-          --shields-up ${SHIELDS_UP} \
+          --accept-routes=${ACCEPT_ROUTES} \
+          --authkey=${AUTHKEY} \
+          --hostname=${HOSTNAME} \
+          --shields-up=${SHIELDS_UP} \
           ${ADDITIONAL_ARGS}
