@@ -10,4 +10,4 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          auth-key: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}

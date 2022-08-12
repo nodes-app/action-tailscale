@@ -4,32 +4,85 @@ branding:
   icon: activity
   color: blue
 inputs:
-  auth-key:
-    description: Tailscale Auth Key
-    required: true
-  version:
-    description: Tailscale Version (defaults to latest)
+  enable-caching:
+    description: 'Enable caching of tailscale and tailscaled'
     required: false
+    default: 'true'
+  version:
+    description: 'Tailscale version (defaults to latest)'
+    required: true
     default: 1.28.0 # renovate
+  accept-routes:
+    description: 'Accept subnet routes that other nodes advertise'
+    required: false
+    default: 'true'
+  authkey:
+    description: 'Tailscale auth key'
+    required: true
+  hostname:
+    description: 'Provide a hostname to use for the device'
+    required: false
+  shields-up:
+    description: 'Block incoming connections from other devices on your Tailscale network'
+    required: false
+    default: 'true'
+  args:
+    description: 'Optional additional arguments to ''tailscale up'''
+    required: false
+
 runs:
   using: composite
   steps:
   
-    - name: Generate Hostname
-      id: generate-hostname
+    - name: Caching
+      if: inputs.enable-caching == 'true'
+      id: caching
+      uses: actions/cache@v3
+      with:
+        path: |
+          /usr/bin/tailscale
+          /usr/bin/tailscaled
+        key: ${{ runner.os }}-tailscale-${{ inputs.version }}
+        restore-keys: |
+          ${{ runner.os }}-tailscale-
+
+    - name: Download
+      if: inputs.enable-caching != 'true' || steps.caching.outputs.cache-hit != 'true'
       shell: bash
-      env: 
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        MINOR=$(echo "$VERSION" | awk -F '.' {'print $2'})
+        if [ $((MINOR % 2)) -eq 0 ]; then
+          URL="https://pkgs.tailscale.com/stable/tailscale_${VERSION}_amd64.tgz"
+        else
+          URL="https://pkgs.tailscale.com/unstable/tailscale_${VERSION}_amd64.tgz"
+        fi
+        curl "$URL" -o tailscale.tgz
+        tar -C /tmp -xzf tailscale.tgz
+        rm tailscale.tgz
+        TSPATH=/tmp/tailscale_${VERSION}_amd64
+        sudo mv "${TSPATH}/tailscale" "${TSPATH}/tailscaled" /usr/bin
+
+    - name: Run
+      shell: bash
+      env:
+        ACCEPT_ROUTES: ${{ inputs.accept-routes }}
+        AUTHKEY: ${{ inputs.authkey }}
+        HOSTNAME: ${{ inputs.hostname }}
+        SHIELDS_UP: ${{ inputs.shields-up }}
+        ADDITIONAL_ARGS: ${{ inputs.args }}
         OWNER: ${{ github.event.repository.owner.login }}
-        REPO: ${{ github.event.repository.name }}
+        REPO_NAME: ${{ github.event.repository.name }}
         RUN_ID: ${{ github.run_id }}
       run: |
-        suffix=$(sum=$(echo -n "$RUN_ID" | sha256sum) && echo ${sum::4})
-        hostname="gh-actions-$OWNER-$REPO-$suffix"
-        echo "::set-output name=hostname::$hostname"
-
-    - name: Run Tailscale
-      uses: tailscale/github-action@e870a1112fcc1faeeeeea3c1b0ce544e5ad01844
-      with:
-        authkey: ${{ inputs.auth-key }}
-        version: ${{ inputs.version }}
-        args: --shields-up --accept-routes --hostname "${{ steps.generate-hostname.outputs.hostname }}"
+        sudo tailscaled 2>~/tailscaled.log &
+        if [ -z "${HOSTNAME}" ]; then
+          HOSTNAME="gh-actions-$OWNER_NAME-$REPO-$(sum=$(echo -n "$RUN_ID" | sha256sum) && echo ${sum::4})"
+        fi
+        sudo tailscale up \
+          --accept-routes ${ACCEPT_ROUTES} \
+          --authkey ${AUTHKEY} \
+          --hostname ${HOSTNAME} \
+          --shields-up ${SHIELDS_UP} \
+          ${ADDITIONAL_ARGS}
