@@ -52,7 +52,7 @@ runs:
         else
           url="https://pkgs.tailscale.com/unstable/tailscale_${VERSION}_amd64.tgz"
         fi
-        wget "$url" -O tailscale.tgz
+        wget -q "$url" -O tailscale.tgz
         mkdir /tmp/tailscale
         tar -C /tmp/tailscale --strip-components 1 -xzf tailscale.tgz
 
