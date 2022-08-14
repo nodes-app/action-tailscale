@@ -4,10 +4,6 @@ branding:
   icon: activity
   color: blue
 inputs:
-  enable-caching:
-    description: 'Enable caching of tailscale and tailscaled'
-    required: false
-    default: 'true'
   version:
     description: 'Tailscale version (defaults to latest)'
     required: true
