@@ -33,38 +33,10 @@ inputs:
 runs:
   using: composite
   steps:
-  
-    - name: Caching
-      if: inputs.enable-caching == 'true'
-      id: caching
-      uses: actions/cache@v3
-      with:
-        path: |
-          /tmp/tailscale_${{ inputs.version }}_amd64
-        key: ${{ runner.os }}-tailscale-${{ inputs.version }}
-        restore-keys: |
-          ${{ runner.os }}-tailscale-
 
-    - name: Download
-      if: inputs.enable-caching != 'true' || steps.caching.outputs.cache-hit != 'true'
-      shell: bash
+    - shell: bash
       env:
         VERSION: ${{ inputs.version }}
-      run: |
-        MINOR=$(echo "$VERSION" | awk -F '.' {'print $2'})
-        if [ $((MINOR % 2)) -eq 0 ]; then
-          URL="https://pkgs.tailscale.com/stable/tailscale_${VERSION}_amd64.tgz"
-        else
-          URL="https://pkgs.tailscale.com/unstable/tailscale_${VERSION}_amd64.tgz"
-        fi
-        curl "$URL" -o tailscale.tgz
-        tar -C /tmp -xzf tailscale.tgz
-        rm tailscale.tgz
-
-    - name: Run
-      shell: bash
-      env:
-        TAILSCALE_PATH: /tmp/tailscale_${{ inputs.version }}_amd64
         ACCEPT_ROUTES: ${{ inputs.accept-routes == 'true' }}
         AUTHKEY: ${{ inputs.authkey }}
         HOSTNAME: ${{ inputs.hostname }}
@@ -74,13 +46,23 @@ runs:
         REPO_NAME: ${{ github.event.repository.name }}
         RUN_ID: ${{ github.run_id }}
       run: |
-        sudo "$TAILSCALE_PATH/tailscaled" 2>~/tailscaled.log &
+        minor=$(echo "$VERSION" | awk -F '.' {'print $2'})
+        if [ $((minor % 2)) -eq 0 ]; then
+          url="https://pkgs.tailscale.com/stable/tailscale_${VERSION}_amd64.tgz"
+        else
+          url="https://pkgs.tailscale.com/unstable/tailscale_${VERSION}_amd64.tgz"
+        fi
+        wget "$url" -O tailscale.tgz
+        mkdir /tmp/tailscale
+        tar -C /tmp/tailscale --strip-components 1 -xzf tailscale.tgz
+
+        sudo /tmp/tailscale/tailscaled 2>~/tailscaled.log &
         if [ -z "${HOSTNAME}" ]; then
           HOSTNAME="gh-actions-$OWNER_NAME-$REPO-$(sum=$(echo -n "$RUN_ID" | sha256sum) && echo ${sum::4})"
         fi
-        sudo "$TAILSCALE_PATH/tailscale" up \
-          --accept-routes="$ACCEPT_ROUTES" \
+        sudo /tmp/tailscale/tailscale up \
+          --accept-routes=$ACCEPT_ROUTES \
           --authkey="$AUTHKEY" \
           --hostname="$HOSTNAME" \
-          --shields-up="$SHIELDS_UP" \
+          --shields-up=$SHIELDS_UP \
           ${ADDITIONAL_ARGS}
