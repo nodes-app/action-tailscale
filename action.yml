@@ -48,9 +48,9 @@ runs:
         else
           url="https://pkgs.tailscale.com/unstable/tailscale_${VERSION}_amd64.tgz"
         fi
-        wget -q "$url" -O tailscale.tgz
+        wget -q "$url" -O /tmp/tailscale.tgz
         mkdir /tmp/tailscale
-        tar -C /tmp/tailscale --strip-components 1 -xzf tailscale.tgz
+        tar -C /tmp/tailscale --strip-components 1 -xzf /tmp/tailscale.tgz
 
         sudo /tmp/tailscale/tailscaled 2>~/tailscaled.log &
         if [ -z "${HOSTNAME}" ]; then
