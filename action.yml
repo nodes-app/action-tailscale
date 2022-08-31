@@ -7,7 +7,7 @@ inputs:
   version:
     description: 'Tailscale version (defaults to latest)'
     required: true
-    default: 1.28.0 # renovate
+    default: 1.30.0 # renovate
   accept-routes:
     description: 'Accept subnet routes that other nodes advertise'
     required: false
