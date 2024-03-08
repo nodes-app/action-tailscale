@@ -32,7 +32,7 @@ jobs:
           echo "::set-output name=version::$version"
       
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with: 
           name: v${{ steps.release-version.outputs.version }}
           tag_name: v${{ steps.release-version.outputs.version }}
